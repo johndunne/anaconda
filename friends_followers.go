@@ -205,6 +205,15 @@ func (a TwitterApi) GetListMembers(screenName string, listID int64, v url.Values
 	return c, (<-response_ch).err
 }
 
+func (a TwitterApi) GetPublicListMembers(listID int64, v url.Values) (c UserCursor, err error) {
+	v = cleanValues(v)
+	v.Set("list_id", strconv.FormatInt(listID, 10))
+
+	response_ch := make(chan response)
+	a.queryQueue <- query{a.baseUrl + "/lists/members.json", v, &c, _GET, response_ch}
+	return c, (<-response_ch).err
+}
+
 func (a TwitterApi) GetFollowersUser(id int64, v url.Values) (c Cursor, err error) {
 	v = cleanValues(v)
 	v.Set("user_id", strconv.FormatInt(id, 10))

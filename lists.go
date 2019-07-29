@@ -79,6 +79,28 @@ func (a TwitterApi) GetListsOwnedBy(userID int64, v url.Values) (lists []List, e
 	return listResponse.Lists, (<-response_ch).err
 }
 
+func (a TwitterApi) GetListsSubscribedTo(userID int64, v url.Values) (lists []List, err error) {
+	v = cleanValues(v)
+	v.Set("user_id", strconv.FormatInt(userID, 10))
+
+	var listResponse ListResponse
+
+	response_ch := make(chan response)
+	a.queryQueue <- query{a.baseUrl + "/lists/subscriptions.json", v, &listResponse, _GET, response_ch}
+	return listResponse.Lists, (<-response_ch).err
+}
+
+func (a TwitterApi) GetListsMemberships(userID int64, v url.Values) (lists []List, err error) {
+	v = cleanValues(v)
+	v.Set("user_id", strconv.FormatInt(userID, 10))
+
+	var listResponse ListResponse
+
+	response_ch := make(chan response)
+	a.queryQueue <- query{a.baseUrl + "/lists/memberships.json", v, &listResponse, _GET, response_ch}
+	return listResponse.Lists, (<-response_ch).err
+}
+
 func (a TwitterApi) GetListTweets(listID int64, includeRTs bool, v url.Values) (tweets []Tweet, err error) {
 	v = cleanValues(v)
 	v.Set("list_id", strconv.FormatInt(listID, 10))

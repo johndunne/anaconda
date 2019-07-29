@@ -44,11 +44,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"bytes"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
-
+	"github.com/lunny/log"
 	"github.com/ChimeraCoder/tokenbucket"
 	"github.com/garyburd/go-oauth/oauth"
 )
@@ -290,7 +291,20 @@ func decodeResponse(resp *http.Response, data interface{}) error {
 	} else if resp.StatusCode != 200 {
 		return newApiError(resp)
 	}
-	return json.NewDecoder(resp.Body).Decode(data)
+
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+	//req.Body.Close()  //  must close
+	filename := resp.Request.URL.Path
+	filename = strings.Replace(filename,"/","",10)
+	filename = strings.Replace(filename,".json","",10)
+	if e:= ioutil.WriteFile(fmt.Sprintf("%s_%s.json", filename, resp.Request.URL.Query().Get("user_id")),bodyBytes,0644);e!=nil{
+		log.Error(e.Error())
+	}
+
+	new_boddy := ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+	defer new_boddy.Close()
+	return json.NewDecoder( new_boddy ).Decode(data)
+	//return json.NewDecoder(resp.Body).Decode(data)
 }
 
 func NewApiError(resp *http.Response) *ApiError {
@@ -352,10 +366,12 @@ func (c *TwitterApi) throttledQuery() {
 					}(q)
 
 					delay := nextWindow.Sub(time.Now())
+
 					<-time.After(delay)
 
 					// Drain the bucket (start over fresh)
 					if c.bucket != nil {
+
 						c.bucket.Drain()
 					}
 

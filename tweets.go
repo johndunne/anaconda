@@ -6,6 +6,22 @@ import (
 	"strconv"
 )
 
+func (a TwitterApi) GetRecentTweets(screenname string, v url.Values) (tweet []Tweet, err error) {
+	v = cleanValues(v)
+	v.Set("screen_name", screenname)
+	response_ch := make(chan response)
+	a.queryQueue <- query{a.baseUrl + "/statuses/user_timeline.json", v, &tweet, _GET, response_ch}
+	return tweet, (<-response_ch).err
+}
+
+func (a TwitterApi) GetRecentTweetsById(user_id int64, v url.Values) (tweet []Tweet, err error) {
+	v = cleanValues(v)
+	v.Set("user_id", fmt.Sprintf("%d",user_id) )
+	response_ch := make(chan response)
+	a.queryQueue <- query{a.baseUrl + "/statuses/user_timeline.json", v, &tweet, _GET, response_ch}
+	return tweet, (<-response_ch).err
+}
+
 func (a TwitterApi) GetTweet(id int64, v url.Values) (tweet Tweet, err error) {
 	v = cleanValues(v)
 	v.Set("id", strconv.FormatInt(id, 10))
