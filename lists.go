@@ -17,6 +17,16 @@ func (a TwitterApi) CreateList(name, description string, v url.Values) (list Lis
 	return list, (<-response_ch).err
 }
 
+// DestroyList implements /lists/destroy.json
+func (a TwitterApi) DestroyList(list_id int64, v url.Values) (list List, err error) {
+	v = cleanValues(v)
+	v.Set("list_id", list_id)
+
+	response_ch := make(chan response)
+	a.queryQueue <- query{a.baseUrl + "/lists/destroy.json", v, &list, _POST, response_ch}
+	return list, (<-response_ch).err
+}
+
 // AddUserToList implements /lists/members/create.json
 func (a TwitterApi) AddUserToList(screenName string, listID int64, v url.Values) (users []User, err error) {
 	v = cleanValues(v)
